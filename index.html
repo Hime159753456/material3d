@@ -37,7 +37,6 @@
       touch-action: none;
     }
     /* Asegura que el feed de cámara y el canvas llenen al 100% */
-    video, canvas {
     /* Asegura que el feed de cámara y el canvas llenen al 100% y se apilen correctamente */
     video, canvas, .a-canvas {
       position: fixed !important;
@@ -77,21 +76,17 @@
     mindar-image="imageTargetSrc: ./marcadores/Prueba.mind;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="colorManagement: true, physicallyCorrectLights: true"
+    renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true"
     embedded
   >
-    <a-scene
-      mindar-image="imageTargetSrc: ./marcadores/Prueba.mind;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true"
-      embedded
-    >
     <!-- Pre-carga de assets -->
     <a-assets>
       <a-asset-item id="modelo" src="./modelos/textured.glb"></a-asset-item>
-@ -71,5 +104,24 @@
+    </a-assets>
+
+    <!-- Cámara (desactivamos look-controls porque el tracking controla la vista) -->
     <a-camera look-controls="enabled: false"></a-camera>
+
   </a-scene>
 
   <!-- Script para fijar --app-height = window.innerHeight en móviles

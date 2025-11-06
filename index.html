@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
-  <title>Proyecto AR - Frutas y Verduras</title>
+  <title>Proyecto AR - MindAR (Imagen completa)</title>
 
-  <!-- A-Frame + MindAR -->
+  <!-- A-Frame + MindAR (AFRAME integration) -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
@@ -15,45 +15,39 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      background: transparent;
-      overflow: hidden;
+      background: #000; /* evita parches blancos */
     }
-
-    /* Escena y video llenan la pantalla */
-    a-scene, video, canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100dvh !important;
-      max-width: 100vw !important;
-      max-height: 100dvh !important;
+    /* La escena ocupa toda la pantalla en móvil y desktop */
+    a-scene {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;       /* clave para evitar media pantalla en blanco */
+      overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 0); /* iOS notch */
+    }
+    /* Asegura que el feed de cámara y el canvas llenen al 100% */
+    video, canvas {
       object-fit: cover !important;
-      background: transparent !important;
-      overflow: hidden;
-    }
-
-    /* Elimina parpadeos y barras negras */
-    .mindar-ui-overlay, .mindar-ui-scanning {
-      display: none !important;
     }
   </style>
 </head>
-
 <body>
-  <!-- Escena MindAR -->
+
+  <!-- Escena MindAR: apunta al .mind generado (colócalo en /marcadores/Prueba.mind) -->
   <a-scene
-    mindar-image="imageTargetSrc: ./marcadores/Prueba.mind; uiLoading: false; uiScanning: false;"
+    mindar-image="imageTargetSrc: ./marcadores/Prueba.mind;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="alpha: true, colorManagement: true, physicallyCorrectLights: true"
+    renderer="colorManagement: true, physicallyCorrectLights: true"
     embedded
   >
-    <!-- Carga de assets -->
+    <!-- Pre-carga de assets -->
     <a-assets>
       <a-asset-item id="modelo" src="./modelos/textured.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Target de imagen -->
+    <!-- Ancla del target (0 si tu .mind tiene un solo objetivo) -->
     <a-entity mindar-image-target="targetIndex: 0">
       <!-- Modelo 3D -->
       <a-gltf-model
@@ -62,10 +56,20 @@
         rotation="0 0 0"
         scale="0.7 0.7 0.7">
       </a-gltf-model>
+
+      <!-- Texto opcional -->
+      <a-text
+        value="Frutas y Verduras 3D"
+        position="0 0.8 0"
+        align="center"
+        color="#FFFFFF"
+        scale="0.8 0.8 0.8">
+      </a-text>
     </a-entity>
 
     <!-- Cámara -->
     <a-camera look-controls="enabled: false"></a-camera>
   </a-scene>
+
 </body>
 </html>

@@ -2,11 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Proyecto AR - Frutas y Verduras</title>
+    <title>Proyecto AR - Frutas y Verduras (NFT Tracking)</title>
 
-    <!-- A-Frame y AR.js -->
+    <!-- A-Frame y AR.js NFT -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar-nft.min.js"></script>
 
     <style>
       body {
@@ -17,40 +17,39 @@
   </head>
 
   <body>
-    <!-- Escena principal -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-      
-      <!-- Marcador personalizado -->
-      <a-marker type="pattern" url="marcadores/frutasyverduras.patt">
-
-        <!-- Modelo 1 - Temporalmente desactivado -->
-        <!--
-        <a-entity
-          gltf-model="modelos/highres.glb"
-          scale="0.4 0.4 0.4"
-          position="0 0 0"
-          rotation="0 45 0"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 8000"
-        ></a-entity>
-        -->
-
-        <!-- Modelo 2 (ligeramente desplazado) -->
+    <!-- Escena principal con seguimiento NFT -->
+    <a-scene
+      embedded
+      vr-mode-ui="enabled: false"
+      renderer="logarithmicDepthBuffer: true;"
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    >
+      <!-- NFT Marker (imagen sin borde) -->
+      <a-nft
+        type="nft"
+        url="marcadores/Prueba de VR"
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance="0.01"
+        smoothThreshold="5"
+      >
+        <!-- Modelo 3D -->
         <a-entity
           gltf-model="modelos/textured.glb"
-          scale="0.8 0.8 0.8"
+          scale="0.7 0.7 0.7"
           position="0 0 0"
           rotation="-90 0 0"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 8000"
         ></a-entity>
 
         <!-- Texto de referencia -->
         <a-text
           value="Frutas y Verduras 3D"
-          position="-0.2127 5 0.0555"
+          position="0 1 0"
           color="#FFFFFF"
           scale="1 1 1"
         ></a-text>
-
-      </a-marker>
+      </a-nft>
 
       <!-- Cámara -->
       <a-entity camera></a-entity>

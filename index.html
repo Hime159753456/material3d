@@ -82,13 +82,22 @@
 
     <!-- Ancla del target (0 si tu .mind tiene un solo objetivo) -->
     <a-entity mindar-image-target="targetIndex: 0">
-      <!-- Modelo 3D -->
-      <a-gltf-model
+      <!-- Luces para mejorar visibilidad del modelo en AR -->
+      <a-entity light="type: ambient; intensity: 0.9; color: #ffffff"></a-entity>
+      <a-entity light="type: directional; intensity: 0.6; color: #ffffff" position="0 1 0"></a-entity>
+
+      <!-- Modelo 3D: subí ligeramente en Y y reduje scale por compatibilidad -->
+      <a-gltf-model id="modeloEntity"
         src="#modelo"
         position="0 0 0"
-        rotation="0 0 0"
-        scale="0.7 0.7 0.7">
+        rotation="0 180 0"
+        scale="0.2 0.2 0.2"
+        visible="true"
+        animation-mixer>
       </a-gltf-model>
+
+      <!-- Fallback: un cubo visible si el GLB no carga -->
+      <a-box id="model-fallback" position="0 0.15 0" depth="0.3" height="0.3" width="0.3" color="#4CC3D9" visible="false"></a-box>
 
       <!-- Texto opcional -->
       <a-text

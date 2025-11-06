@@ -2,16 +2,39 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
   <title>Proyecto AR - MindAR (Imagen completa)</title>
 
   <!-- A-Frame + MindAR (AFRAME integration) -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <style>body{margin:0;overflow:hidden}</style>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000; /* evita parches blancos */
+    }
+    /* La escena ocupa toda la pantalla en móvil y desktop */
+    a-scene {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;       /* clave para evitar media pantalla en blanco */
+      overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 0); /* iOS notch */
+    }
+    /* Asegura que el feed de cámara y el canvas llenen al 100% */
+    video, canvas {
+      object-fit: cover !important;
+    }
+  </style>
 </head>
 <body>
-  <!-- La escena de MindAR: apunta al .mind -->
+
+  <!-- Escena MindAR: apunta al .mind generado (colócalo en /marcadores/Prueba.mind) -->
   <a-scene
     mindar-image="imageTargetSrc: ./marcadores/Prueba.mind;"
     vr-mode-ui="enabled: false"
@@ -24,17 +47,19 @@
       <a-asset-item id="modelo" src="./modelos/textured.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Ancla del target (índice 0 si el .mind tiene 1 imagen) -->
+    <!-- Ancla del target (0 si tu .mind tiene un solo objetivo) -->
     <a-entity mindar-image-target="targetIndex: 0">
-      <!-- Tu modelo -->
-      <a-gltf-model src="#modelo"
+      <!-- Modelo 3D -->
+      <a-gltf-model
+        src="#modelo"
         position="0 0 0"
         rotation="0 0 0"
         scale="0.7 0.7 0.7">
       </a-gltf-model>
 
-      <!-- Texto opcional encima -->
-      <a-text value="Frutas y Verduras 3D"
+      <!-- Texto opcional -->
+      <a-text
+        value="Frutas y Verduras 3D"
         position="0 0.8 0"
         align="center"
         color="#FFFFFF"
@@ -45,5 +70,6 @@
     <!-- Cámara -->
     <a-camera look-controls="enabled: false"></a-camera>
   </a-scene>
+
 </body>
 </html>

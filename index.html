@@ -189,5 +189,39 @@
     })();
   </script>
 
+    <!-- Script para detectar la carga del modelo 3D y mostrar fallback si falla -->
+    <script>
+      (function(){
+        var maxWait = 10000; // ms
+        var modeloEl = document.getElementById('modeloEntity');
+        var fallback = document.getElementById('model-fallback');
+        if(!modeloEl){
+          console.warn('No se encontró elemento #modeloEntity');
+          return;
+        }
+
+        var loaded = false;
+        function onLoaded(){
+          loaded = true;
+          console.log('GLB cargado correctamente.');
+          if(fallback) fallback.setAttribute('visible', 'false');
+        }
+        function onError(e){
+          console.warn('Error al cargar GLB', e);
+        }
+
+        modeloEl.addEventListener('model-loaded', onLoaded);
+        modeloEl.addEventListener('error', onError);
+
+        // Si no se dispara loaded en X ms, mostrar fallback
+        setTimeout(function(){
+          if(!loaded){
+            console.warn('Timeout carga GLB — mostrando fallback.');
+            if(fallback) fallback.setAttribute('visible', 'true');
+          }
+        }, maxWait);
+      })();
+    </script>
+
 </body>
 </html>

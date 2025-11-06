@@ -71,85 +71,67 @@
     <a-camera look-controls="enabled: false"></a-camera>
   </a-scene>
 
-  <!-- Controles para alternar la vista: AR / Sólo cámara / Fondo negro -->
-  <div id="view-controls" role="toolbar" aria-label="Controles de vista">
-    <button id="mode-ar" class="vc-btn" aria-pressed="true">AR normal</button>
-    <button id="mode-camera" class="vc-btn">Sólo cámara</button>
-    <button id="mode-black" class="vc-btn">Fondo negro</button>
-  </div>
+  <!-- Modo solicitado: sólo fondo negro. Ocultamos cualquier <video> o <canvas>
+       que MindAR/A-Frame cree y nos aseguramos de ocultarlos incluso si se
+       recrean dinámicamente (MutationObserver). -->
 
   <style>
-    #view-controls {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      display: flex;
-      gap: 8px;
-      z-index: 9999;
-      background: rgba(0,0,0,0.25);
-      padding: 6px;
-      border-radius: 8px;
-      backdrop-filter: blur(6px);
+    /* Clase utilizada para ocultar por completo elementos de video/canvas */
+    .ar-hidden {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
-    #view-controls .vc-btn {
-      background: rgba(255,255,255,0.06);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    #view-controls .vc-btn[aria-pressed="true"]{
-      background: rgba(255,255,255,0.12);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.6) inset;
+    /* Forzamos fondo negro globalmente */
+    html, body, a-scene {
+      background: #000 !important;
     }
   </style>
 
   <script>
     (function(){
-      // Encuentra los elementos de video y canvas que MindAR/A-Frame crea
-      function elems() {
-        return {
-          videos: Array.from(document.querySelectorAll('video')),
-          canvases: Array.from(document.querySelectorAll('canvas'))
-        };
+      // Aplica la clase .ar-hidden a todos los videos y canvases actuales
+      function hideAll(){
+        document.querySelectorAll('video, canvas').forEach(el=>{
+          if(!el.classList.contains('ar-hidden')) el.classList.add('ar-hidden');
+        });
+        // además reforzamos el background del body
+        document.body.style.background = '#000';
       }
 
-      function setMode(mode){
-        const { videos, canvases } = elems();
-
-        if(mode === 'ar'){
-          // Mostrar ambos (comportamiento por defecto)
-          videos.forEach(v=>{ v.style.display = ''; v.style.visibility = ''; });
-          canvases.forEach(c=>{ c.style.display = ''; c.style.visibility = ''; });
-          document.body.style.background = '#000';
-        } else if(mode === 'camera'){
-          // Mostrar sólo la cámara: ocultar los canvas (donde se dibuja la escena 3D)
-          videos.forEach(v=>{ v.style.display = 'block'; v.style.visibility = 'visible'; });
-          canvases.forEach(c=>{ c.style.display = 'none'; });
-          document.body.style.background = '#000';
-        } else if(mode === 'black'){
-          // Fondo negro: ocultar tanto cámara como canvas para que se vea el fondo
-          videos.forEach(v=>{ v.style.display = 'none'; });
-          canvases.forEach(c=>{ c.style.display = 'none'; });
-          document.body.style.background = '#000';
+      // Observer para esconder elementos que se creen después (MindAR los crea dinámicamente)
+      const observer = new MutationObserver((mutations)=>{
+        for(const m of mutations){
+          if(m.addedNodes && m.addedNodes.length){
+            m.addedNodes.forEach(node=>{
+              if(node instanceof HTMLElement){
+                if(node.tagName === 'VIDEO' || node.tagName === 'CANVAS'){
+                  node.classList.add('ar-hidden');
+                }
+                // Si se añade un subtree que contém video/canvas
+                node.querySelectorAll && node.querySelectorAll('video, canvas').forEach(el=>el.classList.add('ar-hidden'));
+              }
+            });
+          }
         }
-        // Actualiza estado de botones
-        document.querySelectorAll('#view-controls .vc-btn').forEach(btn=>btn.setAttribute('aria-pressed','false'));
-        const btn = document.querySelector('#view-controls #' + (mode === 'ar' ? 'mode-ar' : (mode === 'camera' ? 'mode-camera' : 'mode-black')));
-        if(btn) btn.setAttribute('aria-pressed','true');
-      }
-
-      // Espera que DOM esté listo
-      window.addEventListener('load', function(){
-        document.getElementById('mode-ar').addEventListener('click', function(){ setMode('ar'); });
-        document.getElementById('mode-camera').addEventListener('click', function(){ setMode('camera'); });
-        document.getElementById('mode-black').addEventListener('click', function(){ setMode('black'); });
-
-        // Modo por defecto: AR normal (mantener como estaba)
-        setMode('ar');
       });
+
+      // Iniciar al cargar la página
+      window.addEventListener('load', ()=>{
+        hideAll();
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      });
+
+      // Seguridad: re-aplicar cada 1s durante los primeros 10s por si algo crea/limpia elementos
+      let tries = 0, maxTries = 10;
+      const interval = setInterval(()=>{
+        hideAll();
+        tries++;
+        if(tries >= maxTries){ clearInterval(interval); }
+      }, 1000);
     })();
   </script>
 

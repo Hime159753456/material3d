@@ -71,5 +71,88 @@
     <a-camera look-controls="enabled: false"></a-camera>
   </a-scene>
 
+  <!-- Controles para alternar la vista: AR / Sólo cámara / Fondo negro -->
+  <div id="view-controls" role="toolbar" aria-label="Controles de vista">
+    <button id="mode-ar" class="vc-btn" aria-pressed="true">AR normal</button>
+    <button id="mode-camera" class="vc-btn">Sólo cámara</button>
+    <button id="mode-black" class="vc-btn">Fondo negro</button>
+  </div>
+
+  <style>
+    #view-controls {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      z-index: 9999;
+      background: rgba(0,0,0,0.25);
+      padding: 6px;
+      border-radius: 8px;
+      backdrop-filter: blur(6px);
+    }
+    #view-controls .vc-btn {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #view-controls .vc-btn[aria-pressed="true"]{
+      background: rgba(255,255,255,0.12);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.6) inset;
+    }
+  </style>
+
+  <script>
+    (function(){
+      // Encuentra los elementos de video y canvas que MindAR/A-Frame crea
+      function elems() {
+        return {
+          videos: Array.from(document.querySelectorAll('video')),
+          canvases: Array.from(document.querySelectorAll('canvas'))
+        };
+      }
+
+      function setMode(mode){
+        const { videos, canvases } = elems();
+
+        if(mode === 'ar'){
+          // Mostrar ambos (comportamiento por defecto)
+          videos.forEach(v=>{ v.style.display = ''; v.style.visibility = ''; });
+          canvases.forEach(c=>{ c.style.display = ''; c.style.visibility = ''; });
+          document.body.style.background = '#000';
+        } else if(mode === 'camera'){
+          // Mostrar sólo la cámara: ocultar los canvas (donde se dibuja la escena 3D)
+          videos.forEach(v=>{ v.style.display = 'block'; v.style.visibility = 'visible'; });
+          canvases.forEach(c=>{ c.style.display = 'none'; });
+          document.body.style.background = '#000';
+        } else if(mode === 'black'){
+          // Fondo negro: ocultar tanto cámara como canvas para que se vea el fondo
+          videos.forEach(v=>{ v.style.display = 'none'; });
+          canvases.forEach(c=>{ c.style.display = 'none'; });
+          document.body.style.background = '#000';
+        }
+        // Actualiza estado de botones
+        document.querySelectorAll('#view-controls .vc-btn').forEach(btn=>btn.setAttribute('aria-pressed','false'));
+        const btn = document.querySelector('#view-controls #' + (mode === 'ar' ? 'mode-ar' : (mode === 'camera' ? 'mode-camera' : 'mode-black')));
+        if(btn) btn.setAttribute('aria-pressed','true');
+      }
+
+      // Espera que DOM esté listo
+      window.addEventListener('load', function(){
+        document.getElementById('mode-ar').addEventListener('click', function(){ setMode('ar'); });
+        document.getElementById('mode-camera').addEventListener('click', function(){ setMode('camera'); });
+        document.getElementById('mode-black').addEventListener('click', function(){ setMode('black'); });
+
+        // Modo por defecto: AR normal (mantener como estaba)
+        setMode('ar');
+      });
+    })();
+  </script>
+
 </body>
 </html>
+

@@ -123,5 +123,62 @@
     })();
   </script>
 
+  <!-- Script adicional: asegurar que el <video> de la cámara sea visible y cubra la pantalla -->
+  <script>
+    (function(){
+      // Aplica estilos al video que MindAR/A-Frame crea para la cámara.
+      function styleArVideo(video){
+        try{
+          video.style.position = 'fixed';
+          video.style.top = '0';
+          video.style.left = '0';
+          video.style.width = '100vw';
+          video.style.height = 'var(--app-height, 100dvh)';
+          video.style.objectFit = 'cover';
+          video.style.objectPosition = 'center center';
+          video.style.zIndex = '0';
+          video.style.background = 'black';
+          video.style.margin = '0';
+          video.style.padding = '0';
+          video.style.transform = 'none';
+          video.style.willChange = 'transform, opacity';
+          video.setAttribute('playsinline', '');
+          video.setAttribute('muted', '');
+          video.dataset.mindArStyled = '1';
+        }catch(e){ console.warn('styleArVideo error', e); }
+      }
+
+      // Buscador y aplicador: reintenta durante unos segundos si el video aún no existe.
+      var attempts = 0;
+      var maxAttempts = 40; // ~12s (interval 300ms)
+      var iv = setInterval(function(){
+        attempts++;
+        var videos = document.querySelectorAll('video');
+        if(videos.length){
+          // Prioriza video que tenga srcObject (stream) o autoplay
+          var chosen = null;
+          for(var i=0;i<videos.length;i++){
+            var v = videos[i];
+            if(v.dataset.mindArStyled) { chosen = v; break; }
+            if(v.srcObject || v.autoplay || v.readyState > 0) { chosen = v; break; }
+          }
+          // si no hay preferido, toma el primero
+          if(!chosen) chosen = videos[0];
+          if(chosen && !chosen.dataset.mindArStyled){
+            styleArVideo(chosen);
+          }
+        }
+        if(attempts >= maxAttempts) clearInterval(iv);
+      }, 300);
+
+      // También escucha DOM changes por si el video se recrea
+      var mo = new MutationObserver(function(){
+        var videos = document.querySelectorAll('video');
+        videos.forEach(function(v){ if(!v.dataset.mindArStyled) styleArVideo(v); });
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    })();
+  </script>
+
 </body>
 </html>

@@ -1,58 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Proyecto AR - Frutas y Verduras (NFT Tracking)</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Proyecto AR - MindAR (Imagen completa)</title>
 
-    <!-- A-Frame y AR.js NFT -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar-nft.min.js"></script>
+  <!-- A-Frame + MindAR (AFRAME integration) -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>body{margin:0;overflow:hidden}</style>
+</head>
+<body>
+  <!-- La escena de MindAR: apunta al .mind -->
+  <a-scene
+    mindar-image="imageTargetSrc: ./marcadores/Prueba.mind;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    renderer="colorManagement: true, physicallyCorrectLights: true"
+    embedded
+  >
+    <!-- Pre-carga de assets -->
+    <a-assets>
+      <a-asset-item id="modelo" src="./modelos/textured.glb"></a-asset-item>
+    </a-assets>
 
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
-    </style>
-  </head>
+    <!-- Ancla del target (índice 0 si el .mind tiene 1 imagen) -->
+    <a-entity mindar-image-target="targetIndex: 0">
+      <!-- Tu modelo -->
+      <a-gltf-model src="#modelo"
+        position="0 0 0"
+        rotation="0 0 0"
+        scale="0.7 0.7 0.7">
+      </a-gltf-model>
 
-  <body>
-    <!-- Escena principal con seguimiento NFT -->
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      renderer="logarithmicDepthBuffer: true;"
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    >
-      <!-- NFT Marker (imagen sin borde) -->
-      <a-nft
-        type="nft"
-        url="marcadores/Prueba"
-        smooth="true"
-        smoothCount="10"
-        smoothTolerance="0.01"
-        smoothThreshold="5"
-      >
-        <!-- Modelo 3D -->
-        <a-entity
-          gltf-model="modelos/textured.glb"
-          scale="0.7 0.7 0.7"
-          position="0 0 0"
-          rotation="-90 0 0"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 8000"
-        ></a-entity>
+      <!-- Texto opcional encima -->
+      <a-text value="Frutas y Verduras 3D"
+        position="0 0.8 0"
+        align="center"
+        color="#FFFFFF"
+        scale="0.8 0.8 0.8">
+      </a-text>
+    </a-entity>
 
-        <!-- Texto de referencia -->
-        <a-text
-          value="Frutas y Verduras 3D"
-          position="0 1 0"
-          color="#FFFFFF"
-          scale="1 1 1"
-        ></a-text>
-      </a-nft>
-
-      <!-- Cámara -->
-      <a-entity camera></a-entity>
-    </a-scene>
-  </body>
+    <!-- Cámara -->
+    <a-camera look-controls="enabled: false"></a-camera>
+  </a-scene>
+</body>
 </html>

@@ -30,41 +30,96 @@
     video, canvas {
       object-fit: cover !important;
     }
+
+    /* Mejorar visibilidad del texto 3D */
+    a-text {
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Estilos mejorados para botones */
+    #view-controls .vc-btn {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #view-controls .vc-btn:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    #view-controls .vc-btn[aria-pressed="true"] {
+      background: rgba(255,255,255,0.3);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3) inset;
+    }
+
+    /* Mensaje de carga */
+    #loading-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 8px;
+      font-size: 16px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Escena MindAR: apunta al .mind generado (colócalo en /marcadores/Prueba.mind) -->
+  <!-- Pre-carga de assets -->
+  <a-assets>
+    <!-- Modelos originales -->
+    <a-asset-item id="modelo-portada" src="./modelos/portada.glb"></a-asset-item>
+    <!-- Nuevos modelos -->
+    <a-asset-item id="modelo-frutas" src="./modelos/frutas.glb"></a-asset-item>
+    <a-asset-item id="modelo-verduras" src="./modelos/verduras.glb"></a-asset-item>
+  </a-assets>
+
+  <!-- Escena MindAR con múltiples marcadores -->
   <a-scene
-    mindar-image="imageTargetSrc: ./marcadores/Prueba.mind;"
+    mindar-image="imageTargetSrc: ./marcadores/targets.mind;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     renderer="colorManagement: true, physicallyCorrectLights: true"
     embedded
   >
-    <!-- Pre-carga de assets -->
-    <a-assets>
-      <a-asset-item id="modelo" src="./modelos/portada.glb"></a-asset-item>
-    </a-assets>
-
-    <!-- Ancla del target (0 si tu .mind tiene un solo objetivo) -->
+    <!-- Target 0: Portada -->
     <a-entity mindar-image-target="targetIndex: 0">
-      <!-- Modelo 3D -->
       <a-gltf-model
-        src="#modelo"
+        src="#modelo-portada"
         position="0 0 0"
         rotation="0 0 0"
         scale="0.7 0.7 0.7">
       </a-gltf-model>
+      <a-text value="Portada Principal" position="0 0.8 0" align="center" color="#FFFFFF" scale="0.8 0.8 0.8"></a-text>
+    </a-entity>
 
-      <!-- Texto opcional -->
-      <a-text
-        value="Frutas y Verduras"
-        position="0 0.8 0"
-        align="center"
-        color="#FFFFFF"
-        scale="0.8 0.8 0.8">
-      </a-text>
+    <!-- Target 1: Frutas -->
+    <a-entity mindar-image-target="targetIndex: 1">
+      <a-gltf-model
+        src="#modelo-frutas"
+        position="0 0 0"
+        rotation="0 0 0"
+        scale="0.7 0.7 0.7">
+      </a-gltf-model>
+      <a-text value="Sección Frutas" position="0 0.8 0" align="center" color="#FFFFFF" scale="0.8 0.8 0.8"></a-text>
+    </a-entity>
+
+    <!-- Target 2: Verduras -->
+    <a-entity mindar-image-target="targetIndex: 2">
+      <a-gltf-model
+        src="#modelo-verduras"
+        position="0 0 0"
+        rotation="0 0 0"
+        scale="0.7 0.7 0.7">
+      </a-gltf-model>
+      <a-text value="Sección Verduras" position="0 0.8 0" align="center" color="#FFFFFF" scale="0.8 0.8 0.8"></a-text>
     </a-entity>
 
     <!-- Cámara -->
@@ -74,35 +129,12 @@
   <!-- Controles para alternar la vista: AR / Sólo cámara / Fondo negro -->
   <div id="view-controls" role="toolbar" aria-label="Controles de vista">
     <button id="mode-ar" class="vc-btn" aria-pressed="true">AR normal</button>
+    <button id="mode-camera" class="vc-btn">Solo cámara</button>
+    <button id="mode-black" class="vc-btn">Fondo negro</button>
   </div>
 
-  <style>
-    #view-controls {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      display: flex;
-      gap: 8px;
-      z-index: 9999;
-      background: rgba(0,0,0,0.25);
-      padding: 6px;
-      border-radius: 8px;
-      backdrop-filter: blur(6px);
-    }
-    #view-controls .vc-btn {
-      background: rgba(255,255,255,0.06);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    #view-controls .vc-btn[aria-pressed="true"]{
-      background: rgba(255,255,255,0.12);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.6) inset;
-    }
-  </style>
+  <!-- Mensaje de carga -->
+  <div id="loading-message">Cargando experiencia AR...</div>
 
   <script>
     (function(){
@@ -148,6 +180,18 @@
         // Modo por defecto: AR normal (mantener como estaba)
         setMode('ar');
       });
+
+      // Ocultar mensaje de carga cuando la escena esté lista
+      const sceneEl = document.querySelector('a-scene');
+      const loadingMessage = document.getElementById('loading-message');
+      
+      if (sceneEl.hasLoaded) {
+        loadingMessage.style.display = 'none';
+      } else {
+        sceneEl.addEventListener('loaded', function () {
+          loadingMessage.style.display = 'none';
+        });
+      }
     })();
   </script>
 

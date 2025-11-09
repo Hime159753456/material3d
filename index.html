@@ -34,46 +34,52 @@
 </head>
 <body>
 
-  <!-- Escena MindAR: apunta al .mind generado (colócalo en /marcadores/Prueba.mind) -->
+  <!-- Escena MindAR: permite alternar entre distintos .mind y modelos -->
   <a-scene
+    id="scene"
     mindar-image="imageTargetSrc: ./marcadores/portada.mind;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="colorManagement: true, physicallyCorrectLights: true"
+    renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true; precision: medium"
     embedded
   >
     <!-- Pre-carga de assets -->
     <a-assets>
-      <a-asset-item id="modelo" src="./modelos/portada.glb"></a-asset-item>
+      <!-- Portada -->
+      <a-asset-item id="modelo-portada" src="./modelos/portada.glb"></a-asset-item>
+      <!-- Proceso -->
+      <a-asset-item id="modelo-proceso" src="./modelos/proceso.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Ancla del target (0 si tu .mind tiene un solo objetivo) -->
-    <a-entity mindar-image-target="targetIndex: 0">
-      <!-- Modelo 3D -->
-      <a-gltf-model
-        src="#modelo"
-        position="0 0 0"
-        rotation="0 0 0"
-        scale="0.7 0.7 0.7">
-      </a-gltf-model>
-
-      <!-- Texto opcional -->
-      <a-text
-        value="Frutas y Verduras"
-        position="0 0.8 0"
-        align="center"
-        color="#FFFFFF"
-        scale="0.8 0.8 0.8">
-      </a-text>
+    <!-- TargetIndex 0: se usa cuando el .mind seleccionado tiene un único target o el primero -->
+    <a-entity id="anchor-0" mindar-image-target="targetIndex: 0">
+      <a-gltf-model id="model-0" src="#modelo-portada" position="0 0 0" rotation="0 0 0" scale="0.7 0.7 0.7"></a-gltf-model>
+      <a-text id="label-0" value="Portada" position="0 0.8 0" align="center" color="#FFFFFF" scale="0.8 0.8 0.8"></a-text>
     </a-entity>
+
+    <!-- Opcional: TargetIndex 1, útil si el .mind contiene más de un objetivo. -->
+    <a-entity id="anchor-1" mindar-image-target="targetIndex: 1" visible="false">
+      <a-gltf-model id="model-1" src="#modelo-proceso" position="0 0 0" rotation="0 0 0" scale="0.7 0.7 0.7"></a-gltf-model>
+      <a-text id="label-1" value="Proceso" position="0 0.8 0" align="center" color="#FFFFFF" scale="0.8 0.8 0.8"></a-text>
+    </a-entity>
+
+    <!-- Luces básicas para mejorar la visibilidad de los GLB -->
+    <a-entity light="type: ambient; intensity: 0.7"></a-entity>
+    <a-entity light="type: directional; intensity: 0.6" position="0 1 1"></a-entity>
 
     <!-- Cámara -->
     <a-camera look-controls="enabled: false"></a-camera>
   </a-scene>
 
-  <!-- Controles para alternar la vista: AR / Sólo cámara / Fondo negro -->
-  <div id="view-controls" role="toolbar" aria-label="Controles de vista">
-    <button id="mode-ar" class="vc-btn" aria-pressed="true">AR normal</button>
+  <!-- Controles: vista y selección de marcador/modelo -->
+  <div id="view-controls" role="toolbar" aria-label="Controles de vista y selección">
+    <button id="mode-ar" class="vc-btn" aria-pressed="true">AR</button>
+    <button id="mode-camera" class="vc-btn" aria-pressed="false">Solo cámara</button>
+    <button id="mode-black" class="vc-btn" aria-pressed="false">Fondo negro</button>
+    <select id="marker-select" class="vc-select" aria-label="Seleccionar marcador">
+      <option value="portada" selected>Portada</option>
+      <option value="proceso">Proceso</option>
+    </select>
   </div>
 
   <style>
@@ -88,6 +94,7 @@
       padding: 6px;
       border-radius: 8px;
       backdrop-filter: blur(6px);
+      align-items: center;
     }
     #view-controls .vc-btn {
       background: rgba(255,255,255,0.06);
@@ -102,11 +109,19 @@
       background: rgba(255,255,255,0.12);
       box-shadow: 0 1px 0 rgba(0,0,0,0.6) inset;
     }
+    #view-controls .vc-select {
+      background: rgba(0,0,0,0.4);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
   </style>
 
   <script>
     (function(){
-      // Encuentra los elementos de video y canvas que MindAR/A-Frame crea
+      // Utilidades: obtener elementos de video/canvas creados por MindAR/A-Frame
       function elems() {
         return {
           videos: Array.from(document.querySelectorAll('video')),
@@ -114,39 +129,65 @@
         };
       }
 
+      // Alternar visibilidad entre AR, solo cámara y fondo negro
       function setMode(mode){
         const { videos, canvases } = elems();
 
         if(mode === 'ar'){
-          // Mostrar ambos (comportamiento por defecto)
           videos.forEach(v=>{ v.style.display = ''; v.style.visibility = ''; });
           canvases.forEach(c=>{ c.style.display = ''; c.style.visibility = ''; });
           document.body.style.background = '#000';
         } else if(mode === 'camera'){
-          // Mostrar sólo la cámara: ocultar los canvas (donde se dibuja la escena 3D)
           videos.forEach(v=>{ v.style.display = 'block'; v.style.visibility = 'visible'; });
           canvases.forEach(c=>{ c.style.display = 'none'; });
           document.body.style.background = '#000';
         } else if(mode === 'black'){
-          // Fondo negro: ocultar tanto cámara como canvas para que se vea el fondo
           videos.forEach(v=>{ v.style.display = 'none'; });
           canvases.forEach(c=>{ c.style.display = 'none'; });
           document.body.style.background = '#000';
         }
-        // Actualiza estado de botones
         document.querySelectorAll('#view-controls .vc-btn').forEach(btn=>btn.setAttribute('aria-pressed','false'));
         const btn = document.querySelector('#view-controls #' + (mode === 'ar' ? 'mode-ar' : (mode === 'camera' ? 'mode-camera' : 'mode-black')));
         if(btn) btn.setAttribute('aria-pressed','true');
       }
 
-      // Espera que DOM esté listo
+      // Cambiar de marcador/modelo: alterna imageTargetSrc y contenido mostrado
+      function setMarker(marker){
+        const scene = document.getElementById('scene');
+        const anchor1 = document.getElementById('anchor-1');
+        const model0 = document.getElementById('model-0');
+        const label0 = document.getElementById('label-0');
+
+        if(marker === 'portada'){
+          // Usar el .mind de portada y el modelo de portada en targetIndex 0
+          scene.setAttribute('mindar-image', 'imageTargetSrc: ./marcadores/portada.mind;');
+          model0.setAttribute('src', '#modelo-portada');
+          label0.setAttribute('value', 'Portada');
+          anchor1.setAttribute('visible', 'false');
+        } else if(marker === 'proceso'){
+          // Usar el .mind de proceso y el modelo de proceso en targetIndex 0
+          scene.setAttribute('mindar-image', 'imageTargetSrc: ./marcadores/proceso.mind;');
+          model0.setAttribute('src', '#modelo-proceso');
+          label0.setAttribute('value', 'Proceso');
+          anchor1.setAttribute('visible', 'false');
+        }
+        // Nota: si en el futuro generas un .mind con múltiples targets, puedes habilitar anchor-1
+        // y apuntar model-1/label-1 al targetIndex:1 según corresponda.
+      }
+
       window.addEventListener('load', function(){
+        // Botones de modo
         document.getElementById('mode-ar').addEventListener('click', function(){ setMode('ar'); });
         document.getElementById('mode-camera').addEventListener('click', function(){ setMode('camera'); });
         document.getElementById('mode-black').addEventListener('click', function(){ setMode('black'); });
 
-        // Modo por defecto: AR normal (mantener como estaba)
+        // Selector de marcador
+        const select = document.getElementById('marker-select');
+        select.addEventListener('change', function(){ setMarker(this.value); });
+
+        // Estados iniciales
         setMode('ar');
+        setMarker(select.value);
       });
     })();
   </script>

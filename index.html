@@ -107,6 +107,53 @@
       100% { transform: rotate(360deg); }
     }
   </style>
+  <style>
+    /* Overlay de escaneo */
+    #scan-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 9000;
+    }
+    #scan-frame {
+      position: relative;
+      width: min(80vw, 500px);
+      height: min(60vh, 350px);
+      border: 4px solid rgba(66,153,225,0.9);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(66,153,225,0.5), inset 0 0 20px rgba(66,153,225,0.3);
+      overflow: hidden;
+      backdrop-filter: blur(2px);
+    }
+    #scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(66,153,225,1), transparent);
+      box-shadow: 0 0 12px rgba(66,153,225,0.9);
+      animation: scan 2.2s linear infinite;
+    }
+    @keyframes scan {
+      0% { top: 8px; }
+      50% { top: calc(100% - 11px); }
+      100% { top: 8px; }
+    }
+    #scan-text {
+      position: absolute;
+      bottom: 10px; left: 0; right: 0;
+      text-align: center;
+      color: #e6f2ff;
+      font-family: Arial, sans-serif;
+      font-weight: 600;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      filter: drop-shadow(0 0 6px rgba(66,153,225,0.7));
+      pointer-events: none;
+    }
+    #scan-overlay.hidden { display: none; }
+  </style>
 </head>
 <body>
 
@@ -114,6 +161,14 @@
   <div id="loading-overlay">
     <div class="spinner"></div>
     <div>Iniciando AR...</div>
+  </div>
+
+  <!-- Overlay de escaneo -->
+  <div id="scan-overlay">
+    <div id="scan-frame">
+      <div id="scan-line"></div>
+      <div id="scan-text">Coloca la imagen objetivo dentro del cuadro</div>
+    </div>
   </div>
 
   <!-- 
@@ -288,6 +343,7 @@
       let sceneEl = null;
       let currentMode = 'black'; // Modo inicial
       let threeRenderer = null;
+      let trackingActive = false;
 
       // Inicializar AR
       async function initAR() {
@@ -305,16 +361,44 @@
             // Obtener renderer de Three.js de A-Frame para controlar el clear color/alpha
             threeRenderer = sceneEl.renderer;
             if (threeRenderer) {
-              // Asegurar premultipliedAlpha coherente y buffer transparente
               try {
                 threeRenderer.setClearColor(0x000000, 1);
               } catch(e) {
                 console.warn('No se pudo setear clearColor inicialmente', e);
               }
             }
+
+            // Suscribirse a eventos de tracking por target
+            const anchors = [
+              document.getElementById('anchor-0'),
+              document.getElementById('anchor-1')
+            ].filter(Boolean);
+
+            anchors.forEach((anchor, idx) => {
+              anchor.addEventListener('targetFound', () => {
+                trackingActive = true;
+                console.log(`🎯 targetFound -> targetIndex: ${idx}`);
+                const scanOverlay = document.getElementById('scan-overlay');
+                if (scanOverlay) scanOverlay.classList.add('hidden');
+              });
+              anchor.addEventListener('targetLost', () => {
+                // Si ninguno está activo, muestra overlay
+                console.log(`⭕ targetLost -> targetIndex: ${idx}`);
+                setTimeout(() => {
+                  // Verificar si sigue sin tracking tras un breve lapso
+                  if (!document.querySelector('[mindar-image-target].found')) {
+                    trackingActive = false;
+                    const scanOverlay = document.getElementById('scan-overlay');
+                    if (scanOverlay) scanOverlay.classList.remove('hidden');
+                  }
+                }, 200);
+              });
+            });
             
-            // Ocultar overlay
+            // Ocultar overlay de carga y mostrar guía de escaneo mientras no hay tracking
             document.getElementById('loading-overlay').classList.add('hidden');
+            const scanOverlay = document.getElementById('scan-overlay');
+            if (scanOverlay) scanOverlay.classList.remove('hidden');
             
             // Aplicar modo inicial
             setMode(currentMode);

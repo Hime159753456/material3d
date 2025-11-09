@@ -33,6 +33,9 @@
       width: 100% !important;
       height: 100% !important;
       object-fit: cover !important;
+      position: absolute !important;
+      top: 0;
+      left: 0;
     }
 
     /* Controles simplificados - solo 2 botones */
@@ -131,7 +134,7 @@
     mindar-image="imageTargetSrc: ./marcadores/targets.mind; autoStart: false; uiScanning: no; uiLoading: no;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true; precision: medium;"
+    renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true; precision: medium; alpha: true;"
     embedded
   >
     <!-- 
@@ -284,6 +287,7 @@
       let arSystem = null;
       let sceneEl = null;
       let currentMode = 'black'; // Modo inicial
+      let threeRenderer = null;
 
       // Inicializar AR
       async function initAR() {
@@ -297,6 +301,17 @@
           try {
             await arSystem.start();
             console.log('✅ MindAR iniciado - Apunta a tus imágenes');
+            
+            // Obtener renderer de Three.js de A-Frame para controlar el clear color/alpha
+            threeRenderer = sceneEl.renderer;
+            if (threeRenderer) {
+              // Asegurar premultipliedAlpha coherente y buffer transparente
+              try {
+                threeRenderer.setClearColor(0x000000, 1);
+              } catch(e) {
+                console.warn('No se pudo setear clearColor inicialmente', e);
+              }
+            }
             
             // Ocultar overlay
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -324,39 +339,37 @@
         currentMode = mode;
         const { videos, canvases } = getMediaElements();
 
+        // Asegurar que ocupen toda la pantalla
+        [...videos, ...canvases].forEach(el => {
+          el.style.display = 'block';
+          el.style.visibility = 'visible';
+          el.style.width = '100%';
+          el.style.height = '100%';
+          el.style.objectFit = 'cover';
+          el.style.top = '0';
+          el.style.left = '0';
+          el.style.position = 'absolute';
+        });
+
         if (mode === 'transparent') {
-          // Modo transparente: cámara + modelos 3D con fondo transparente
-          videos.forEach(v => {
-            v.style.display = 'block';
-            v.style.visibility = 'visible';
-          });
-          canvases.forEach(c => {
-            c.style.display = 'block';
-            c.style.visibility = 'visible';
-          });
+          // Fondo del body transparente y canvas con alpha 0
           document.body.style.background = 'transparent';
+          if (threeRenderer && threeRenderer.setClearColor) {
+            try { threeRenderer.setClearColor(0x000000, 0); } catch(e) {}
+          }
         } else if (mode === 'black') {
-          // Modo fondo negro: cámara + modelos 3D con fondo negro
-          videos.forEach(v => {
-            v.style.display = 'block';
-            v.style.visibility = 'visible';
-          });
-          canvases.forEach(c => {
-            c.style.display = 'block';
-            c.style.visibility = 'visible';
-          });
           document.body.style.background = '#000';
+          if (threeRenderer && threeRenderer.setClearColor) {
+            try { threeRenderer.setClearColor(0x000000, 1); } catch(e) {}
+          }
         }
 
         // Actualizar estado de botones
         document.querySelectorAll('.vc-btn').forEach(btn => {
           btn.setAttribute('aria-pressed', 'false');
         });
-        
         const activeBtn = document.getElementById(`mode-${mode}`);
-        if (activeBtn) {
-          activeBtn.setAttribute('aria-pressed', 'true');
-        }
+        if (activeBtn) activeBtn.setAttribute('aria-pressed', 'true');
 
         console.log(`🔄 Modo cambiado a: ${mode}`);
       }

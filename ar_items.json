@@ -41,7 +41,7 @@
     "modelo": "./proyectos/MTarjeta/modelos/AngelHime.glb",
     "titulo": "",
     "escala": "0.4 0.4 0.4",
-    "posicion": "-0.02 0.52 0",
+    "posicion": "-0.02 0 0",
     "rotacion": "0 -90 21"
   }
 ]

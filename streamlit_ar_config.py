@@ -424,7 +424,7 @@ def build_3d_viewer_html(
     sx: float, sy: float, sz: float,
     px: float, py: float, pz: float,
     rx: float, ry: float, rz: float,
-    proyecto_id: int = 0,
+    proyecto_nombre: str = "",
     target_index: int = 0,
 ) -> str:
     img_section = ""
@@ -462,13 +462,9 @@ body {{ background:#1a1a2e; font-family:Arial,sans-serif; color:#e0e0e0; overflo
 .btn-save {{ background:#38a169; }}
 .btn-reset {{ background:#718096; }}
 .btn-save:active,.btn-reset:active {{ transform:scale(0.96); }}
-#toast {{ position:fixed; top:12px; left:50%; transform:translateX(-50%); background:#2d3748; color:#fff; padding:12px 20px; border-radius:10px; font-size:12px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:999; text-align:center; border:1px solid #4299e1; }}
-#toast code {{ display:block; margin-top:4px; color:#90cdf4; font-size:11px; line-height:1.6; }}
-#toast.show {{ opacity:1; }}
 #info {{ position:absolute; bottom:8px; left:8px; font-size:11px; color:#556; }}
 </style></head>
 <body>
-<div id="toast">Guardando...</div>
 <div id="viewport"><div id="info">Click + arrastrar para rotar | Scroll para zoom</div></div>
 <div id="panel">
   <h3>Propiedades</h3>
@@ -497,7 +493,7 @@ body {{ background:#1a1a2e; font-family:Arial,sans-serif; color:#e0e0e0; overflo
   </div>
   <div class="btn-row">
     <button class="btn btn-reset" onclick="resetValues()">Restablecer</button>
-    <button class="btn btn-save" id="save-btn" onclick="saveValues()">Guardar en proyecto</button>
+    <button class="btn btn-save" id="save-btn" onclick="saveValues()">Guardar cambios</button>
   </div>
 </div>
 
@@ -544,6 +540,9 @@ scene.add(new THREE.AxesHelper(0.5));
 
 // Initial values for reset
 const INIT = {{sx:{sx},sy:{sy},sz:{sz},px:{px},py:{py},pz:{pz},rx:{rx},ry:{ry},rz:{rz}}};
+// Proyecto y target para guardar
+const PROYECTO_NOMBRE = '{proyecto_nombre}';
+const TARGET_INDEX = {target_index};
 
 const modelB64 = document.getElementById('model-data').textContent;
 const raw = atob(modelB64);
@@ -629,21 +628,24 @@ window.resetValues = function() {{
   updateDisplay();
 }};
 
-// Save: copy values to clipboard and show them in the toast
+// Save: send values to Streamlit via query params (page reload)
 window.saveValues = function() {{
   const g = id => parseFloat(document.getElementById(id).value);
   const s = `${{g('sx')}} ${{g('sy')}} ${{g('sz')}}`;
   const p = `${{g('px')}} ${{g('py')}} ${{g('pz')}}`;
   const r = `${{g('rx')}} ${{g('ry')}} ${{g('rz')}}`;
-  const text = s + '\\n' + p + '\\n' + r;
 
-  navigator.clipboard.writeText(text).catch(() => {{}});
-
-  const toast = document.getElementById('toast');
-  toast.innerHTML = '<b>Copiado</b><br><code>' +
-    'E: ' + s + '<br>P: ' + p + '<br>R: ' + r + '</code>';
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 4000);
+  try {{
+    const baseUrl = window.top.location.href.split('?')[0];
+    window.top.location.href = baseUrl
+      + '?proyecto=' + encodeURIComponent(PROYECTO_NOMBRE)
+      + '&target=' + TARGET_INDEX
+      + '&save_scale=' + encodeURIComponent(s)
+      + '&save_pos=' + encodeURIComponent(p)
+      + '&save_rot=' + encodeURIComponent(r);
+  }} catch(e) {{
+    navigator.clipboard.writeText(s + '\\n' + p + '\\n' + r).catch(() => {{}});
+  }}
 }};
 </script>
 <script type="text/plain" id="model-data">{model_b64}</script>
@@ -658,6 +660,29 @@ st.set_page_config(page_title="Material 3D — Panel AR", layout="wide")
 st.title("Panel AR — Material 3D")
 
 init_db()
+
+# ── Manejar guardado desde visor 3D (via query params) ──
+_save_scale = st.query_params.get("save_scale")
+_save_pos = st.query_params.get("save_pos")
+_save_rot = st.query_params.get("save_rot")
+_save_proy = st.query_params.get("proyecto")
+_save_target = st.query_params.get("target")
+if _save_scale and _save_pos and _save_rot and _save_proy and _save_target is not None:
+    try:
+        with sqlite3.connect(DB_PATH) as con:
+            con.row_factory = sqlite3.Row
+            proy_row = con.execute("SELECT id FROM proyectos WHERE nombre = ?", (_save_proy,)).fetchone()
+            if proy_row:
+                con.execute(
+                    "UPDATE items SET escala=?, posicion=?, rotacion=? WHERE proyecto_id=? AND target_index=?",
+                    (_save_scale, _save_pos, _save_rot, proy_row["id"], int(_save_target))
+                )
+                con.commit()
+                sync_global_json()
+    except Exception as ex:
+        st.error(f"Error al guardar desde visor: {ex}")
+    st.query_params.clear()
+    st.rerun()
 
 # ── Sidebar: lista de proyectos ───────────────
 proyectos = get_proyectos()
@@ -994,49 +1019,10 @@ with tab_preview:
                         sc[0], sc[1], sc[2],
                         ps[0], ps[1], ps[2],
                         rt[0], rt[1], rt[2],
-                        proyecto_id=proyecto_activo["id"],
+                        proyecto_nombre=proyecto_activo["nombre"],
                         target_index=sel_item["targetIndex"],
                     )
                     components.html(html, height=550)
-
-                    # ── Guardar transformacion ──
-                    st.divider()
-                    st.caption(
-                        'Ajusta los valores en el visor, luego haz clic en **"Guardar en proyecto"** '
-                        'para copiarlos. Pegalos abajo y haz clic en **Guardar**.'
-                    )
-                    col_s, col_p, col_r = st.columns(3)
-                    with col_s:
-                        new_scale = st.text_input(
-                            "Escala", value=sel_item.get("escala", "0.7 0.7 0.7"),
-                            key=f"ps_{sel_item['targetIndex']}"
-                        )
-                    with col_p:
-                        new_pos = st.text_input(
-                            "Posicion", value=sel_item.get("posicion", "0 0 0"),
-                            key=f"pp_{sel_item['targetIndex']}"
-                        )
-                    with col_r:
-                        new_rot = st.text_input(
-                            "Rotacion", value=sel_item.get("rotacion", "0 0 0"),
-                            key=f"pr_{sel_item['targetIndex']}"
-                        )
-
-                    col_reload, col_save = st.columns([1, 2])
-                    with col_reload:
-                        if st.button("Recargar visor", use_container_width=True):
-                            del st.session_state[cache_key]
-                            st.rerun()
-                    with col_save:
-                        if st.button("Guardar", type="primary", use_container_width=True):
-                            sel_item["escala"] = new_scale.strip() or "0.7 0.7 0.7"
-                            sel_item["posicion"] = new_pos.strip() or "0 0 0"
-                            sel_item["rotacion"] = new_rot.strip() or "0 0 0"
-                            save_item(proyecto_activo["id"], sel_item)
-                            sync_json(proyecto_activo["id"], dirs_prev)
-                            del st.session_state[cache_key]
-                            st.success("Transformacion guardada.")
-                            st.rerun()
 
 
 # ═══════════════════════════════════════════════

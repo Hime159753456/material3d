@@ -628,7 +628,7 @@ window.resetValues = function() {{
   updateDisplay();
 }};
 
-// Save: send values to Streamlit via query params (page reload)
+// Save: fill and submit hidden form in parent page
 window.saveValues = function() {{
   const g = id => parseFloat(document.getElementById(id).value);
   const s = `${{g('sx')}} ${{g('sy')}} ${{g('sz')}}`;
@@ -636,13 +636,13 @@ window.saveValues = function() {{
   const r = `${{g('rx')}} ${{g('ry')}} ${{g('rz')}}`;
 
   try {{
-    const baseUrl = window.top.location.href.split('?')[0];
-    window.top.location.href = baseUrl
-      + '?proyecto=' + encodeURIComponent(PROYECTO_NOMBRE)
-      + '&target=' + TARGET_INDEX
-      + '&save_scale=' + encodeURIComponent(s)
-      + '&save_pos=' + encodeURIComponent(p)
-      + '&save_rot=' + encodeURIComponent(r);
+    const pd = window.parent.document;
+    pd.getElementById('hf-proyecto').value = PROYECTO_NOMBRE;
+    pd.getElementById('hf-target').value = TARGET_INDEX;
+    pd.getElementById('hf-scale').value = s;
+    pd.getElementById('hf-pos').value = p;
+    pd.getElementById('hf-rot').value = r;
+    pd.getElementById('hf-submit').click();
   }} catch(e) {{
     navigator.clipboard.writeText(s + '\\n' + p + '\\n' + r).catch(() => {{}});
   }}
@@ -681,6 +681,7 @@ if _save_scale and _save_pos and _save_rot and _save_proy and _save_target is no
                 sync_global_json()
     except Exception as ex:
         st.error(f"Error al guardar desde visor: {ex}")
+    st.session_state.save_success = True
     st.query_params.clear()
     st.rerun()
 
@@ -1024,6 +1025,18 @@ with tab_preview:
                     )
                     components.html(html, height=550)
 
+                    st.markdown("""<form id="ar-save-form" method="get" style="display:none">
+<input name="proyecto" id="hf-proyecto">
+<input name="target" id="hf-target">
+<input name="save_scale" id="hf-scale">
+<input name="save_pos" id="hf-pos">
+<input name="save_rot" id="hf-rot">
+<button type="submit" id="hf-submit">Guardar</button>
+</form>""", unsafe_allow_html=True)
+
+                    if st.session_state.get("save_success"):
+                        st.success("Cambios guardados correctamente.")
+                        del st.session_state.save_success
 
 # ═══════════════════════════════════════════════
 # Tab 4 — Compilar

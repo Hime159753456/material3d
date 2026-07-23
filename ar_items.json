@@ -39,9 +39,9 @@
     "targetIndex": 4,
     "imagen": "./proyectos/MTarjeta/imagenes/TarjetaJaime.png",
     "modelo": "./proyectos/MTarjeta/modelos/AngelHime.glb",
-    "titulo": "Yo",
-    "escala": "0.7 0.7 0.7",
-    "posicion": "0 0 0",
-    "rotacion": "0 0 0"
+    "titulo": "",
+    "escala": "0.4 0.4 0.4",
+    "posicion": "-0.02 0.52 0",
+    "rotacion": "0 -90 21"
   }
 ]

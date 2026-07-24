@@ -43,5 +43,14 @@
     "escala": "0.4 0.4 0.4",
     "posicion": "-0.02 0 0",
     "rotacion": "0 -90 21"
+  },
+  {
+    "targetIndex": 5,
+    "imagen": "./proyectos/MTarjeta/imagenes/FtoJaime.jpeg",
+    "modelo": "./proyectos/MTarjeta/modelos/EscenaJAIME.glb",
+    "titulo": "",
+    "escala": "0.7 0.7 0.7",
+    "posicion": "0 0 0",
+    "rotacion": "0 0 0"
   }
 ]

@@ -5,7 +5,16 @@
     "modelo": "./proyectos/Menu_KFC/modelos/AnimeHambu.glb",
     "titulo": "",
     "escala": "0.7 0.7 0.7",
-    "posicion": "-0.19 0.72 -0.74",
-    "rotacion": "0 -85 -90"
+    "posicion": "0.04 -0.26 0.08",
+    "rotacion": "0 0 0"
+  },
+  {
+    "targetIndex": 6,
+    "imagen": "./proyectos/Menu_KFC/imagenes/Dona.png",
+    "modelo": "./proyectos/Menu_KFC/modelos/Donatest.glb",
+    "titulo": "",
+    "escala": "0.7 0.7 0.7",
+    "posicion": "0 0 0",
+    "rotacion": "0 0 0"
   }
 ]
